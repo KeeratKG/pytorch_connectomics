@@ -46,7 +46,7 @@ class Trainer(object):
         # add config details to tensorboard
         self.monitor.load_config(self.cfg)
 
-        self.dataloader = iter(self.dataloader)
+        self.dataloader = iter(self.dataloader) #iter() function returns an iterator for the given object. The iter() function creates an object which can be iterated one element at a time.
 
     def train(self):
         r"""Training function.
