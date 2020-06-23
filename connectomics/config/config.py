@@ -136,16 +136,26 @@ _C.DATASET.DATA_INVALID_THRES = [0., 0.]
 
 _C.DATASET.PRE_LOAD_DATA = [None,None,None]
 
-# Reject sampling
-_C.DATASET.REJECT_SIZE_THRES = 100
-
-_C.DATASET.REJECT_P = 0.95
-
+# For some datasets the foreground mask is sparse in the volume. Therefore
+# we perform reject sampling to decrease (all completely avoid) regions
+# without foreground masks. Set REJECT_SAMPLING.SIZE_THRES = -1 to disable.
+_C.DATASET.REJECT_SAMPLING = CN()
+_C.DATASET.REJECT_SAMPLING.SIZE_THRES = -1
+# By default, we conduct rejection sampling before data augmentation to
+# save data loading time. However, the final output after augmentation
+# may not satisfy the SIZE_THRES. Thus some tasks require AFTER_AUG=True.
+_C.DATASET.REJECT_SAMPLING.AFTER_AUG = False
+_C.DATASET.REJECT_SAMPLING.P = 0.95
 
 # -----------------------------------------------------------------------------
 # Augmentor
 # -----------------------------------------------------------------------------
 _C.AUGMENTOR = CN()
+
+# The nearest interpolation for the label mask during data augmentation
+# can result in masks with coarse boundaries. Thus we apply Gaussian filtering
+# to smooth the object boundary (default: True).
+_C.AUGMENTOR.SMOOTH = True
 
 _C.AUGMENTOR.ROTATE = CN({"ENABLED": True})
 # Probability of applying the rotation augmentation
@@ -156,14 +166,14 @@ _C.AUGMENTOR.RESCALE = CN({"ENABLED": True})
 _C.AUGMENTOR.RESCALE.P = 0.5
 
 _C.AUGMENTOR.FLIP = CN({"ENABLED": True})
-# Probability of applying the flip augmentation
-_C.AUGMENTOR.FLIP.P = 0.5
+# Probability of applying the flip augmentation (always applied by default)
+_C.AUGMENTOR.FLIP.P = 1.0
 # Conducting x-z and y-z flip only when the dataset is isotropic. 
 _C.AUGMENTOR.FLIP.DO_ZTRANS = 0
 
 _C.AUGMENTOR.ELASTIC = CN({"ENABLED": True})
 # Maximum pixel-moving distance of elastic transformation
-_C.AUGMENTOR.ELASTIC.ALPHA = 12.0
+_C.AUGMENTOR.ELASTIC.ALPHA = 16.0
 # Standard deviation of the Gaussian filter
 _C.AUGMENTOR.ELASTIC.SIGMA = 4.0
 # Probability of applying the elastic augmentation
@@ -186,14 +196,23 @@ _C.AUGMENTOR.MISALIGNMENT = CN({"ENABLED": True})
 _C.AUGMENTOR.MISALIGNMENT.P = 0.5
 # Maximum pixel displacement in each direction (x and y) (int)
 _C.AUGMENTOR.MISALIGNMENT.DISPLACEMENT = 16
+_C.AUGMENTOR.MISALIGNMENT.ROTATE_RATIO = 0.5
 
 _C.AUGMENTOR.MOTIONBLUR = CN({"ENABLED": True})
-# Probability of applying the rotation augmentation
+# Probability of applying the motion blur augmentation
 _C.AUGMENTOR.MOTIONBLUR.P = 0.5
 # Number of sections along z dimension to apply motion blur
 _C.AUGMENTOR.MOTIONBLUR.SECTIONS = 2
 # Kernel size of motion blur
 _C.AUGMENTOR.MOTIONBLUR.KERNEL_SIZE = 11
+
+_C.AUGMENTOR.CUTBLUR = CN({"ENABLED": True})
+# Probability of applying the CutBlur augmentation
+_C.AUGMENTOR.CUTBLUR.P = 0.5
+_C.AUGMENTOR.CUTBLUR.LENGTH_RATIO = 0.4
+_C.AUGMENTOR.CUTBLUR.DOWN_RATIO_MIN = 2.0
+_C.AUGMENTOR.CUTBLUR.DOWN_RATIO_MAX = 8.0
+_C.AUGMENTOR.CUTBLUR.DOWNSAMPLE_Z = False
 
 # -----------------------------------------------------------------------------
 # Solver

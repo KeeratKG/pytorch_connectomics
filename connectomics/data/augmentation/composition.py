@@ -12,20 +12,43 @@ class Compose(object):
     Args:
         transforms (list): list of transformations to compose.
         input_size (tuple): input size of model in (z, y, x).
+        smooth (bool): smooth the gt object mask with Gaussian filtering (default: True).
         keep_uncropped (bool): keep uncropped images and labels (default: False).
         keep_non_smooth (bool): return also the non-smoothed masks (default: False).
     """
     def __init__(self, 
                  transforms, 
                  input_size = (8,196,196),
+                 smooth = True,
                  keep_uncropped = False,
                  keep_non_smoothed = False):
+
         self.transforms = transforms
+        self.set_flip()
+
         self.input_size = np.array(input_size)
         self.sample_size = self.input_size.copy()
         self.set_sample_params()
+
+        self.smooth = smooth
         self.keep_uncropped = keep_uncropped
         self.keep_non_smoothed = keep_non_smoothed
+
+    def set_flip(self):
+        # Some data augmentation techniques (e.g., elastic wrap, missing parts) are designed only
+        # for x-y planes while some (e.g., missing section, mis-alignment) are only applied along
+        # the z axis. Thus we let flip augmentation the last one to be applied otherwise shape mis-match
+        # can happen when do_ztrans is 1 for cubic input volumes.
+        self.flip_aug = None
+        flip_idx = None
+
+        for i, t in enumerate(self.transforms):
+            if t.__class__.__name__ == 'Flip':
+                self.flip_aug = t
+                flip_idx = i
+
+        if flip_idx is not None:
+            del self.transforms[flip_idx]
 
     def set_sample_params(self):
         for _, t in enumerate(self.transforms):
@@ -94,12 +117,15 @@ class Compose(object):
                     return {'image': image[:, z_low:z_high, low:high, low:high],
                             'label': label[z_low:z_high, low:high, low:high]}                                        
 
-    def __call__(self, data, random_state=np.random):
+    def __call__(self, data, random_state=np.random.RandomState()):
+        # According thie blog post (https://www.sicara.ai/blog/2019-01-28-how-computer-generate-random-numbers):
+        # we need to be careful when using numpy.random in multiprocess application as it can always generate the 
+        # same output for different processes. Therefore we use np.random.RandomState().
         data['image'] = data['image'].astype(np.float32)
 
         ran = random_state.rand(len(self.transforms))
         for tid, t in enumerate(reversed(self.transforms)):
-            if  ran[tid] < t.p:
+            if ran[tid] < t.p:
                 data = t(data, random_state)
 
         # crop the data to input size
@@ -107,7 +133,15 @@ class Compose(object):
             data['uncropped_image'] = data['image']
             data['uncropped_label'] = data['label']
         data = self.crop(data)
+
+        # flip augmentation
+        if self.flip_aug is not None:
+            if random_state.rand() < self.flip_aug.p:
+                data = self.flip_aug(data, random_state)
+
         if self.keep_non_smoothed:
             data['non_smoothed'] = data['label']
-        data = self.smooth_edge(data)
+
+        if self.smooth:
+            data = self.smooth_edge(data)
         return data
