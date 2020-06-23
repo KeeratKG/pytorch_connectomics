@@ -72,10 +72,10 @@ class Trainer(object):
             loss = self.criterion.eval(pred, target, weight)
 
             # compute gradient
-            loss.backward()
+            loss.backward()  #backprop
             if (iteration+1) % self.cfg.SOLVER.ITERATION_STEP == 0:
-                self.optimizer.step()
-                self.optimizer.zero_grad()
+                self.optimizer.step()  #weight update 
+                self.optimizer.zero_grad() #zero the gradient buffer
 
             # logging and update record
             do_vis = self.monitor.update(self.lr_scheduler, iter_total, loss, self.optimizer.param_groups[0]['lr']) 
