@@ -66,7 +66,7 @@ class Trainer(object):
             time1 = time.perf_counter()
 
             # prediction
-            volume = torch.from_numpy(volume).to(self.device, dtype=torch.float)
+            volume = torch.from_numpy(volume).to(self.device, dtype=torch.float)  #converting array into tensor
             pred = self.model(volume)
            
             loss = self.criterion.eval(pred, target, weight)
