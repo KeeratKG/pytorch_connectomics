@@ -10,7 +10,7 @@ def get_args():
     """
     parser = argparse.ArgumentParser(description="Model Training & Inference")
     parser.add_argument('--config-file', type=str, help='configuration file (yaml)')
-    parser.add_argument('--inference', action='store_true', help='inference mode')
+    parser.add_argument('--inference', action='store_true', help='inference mode') #action='store_true' implies if the option is specified, assign the value True to args.verbose. Not specifying it implies False
     parser.add_argument('--checkpoint', type=str, default=None, help='path to load the checkpoint')
     # Merge configs from command line (e.g., add 'SYSTEM.NUM_GPUS 8').
     parser.add_argument(
