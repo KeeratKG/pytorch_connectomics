@@ -17,7 +17,7 @@ def get_args():
         "opts",
         help="Modify config options using the command-line",
         default=None,
-        nargs=argparse.REMAINDER,
+        nargs=argparse.REMAINDER, #All the remaining command-line arguments are gathered into a list. The nargs keyword argument associates a different number of command-line arguments with a single action.
     )
     args = parser.parse_args()
     return args
